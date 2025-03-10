@@ -285,9 +285,6 @@ class InviteDB {
             // 如果有新增用户，添加邀请记录
             const avatarColors = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c', '#d35400', '#34495e'];
             
-            // 创建一个Promise数组，用于存储所有添加用户的Promise
-            const addPromises = [];
-            
             for (let i = 0; i < increment; i++) {
                 const colorIndex = Math.floor(Math.random() * avatarColors.length);
                 // 使用新的方法生成微信风格的昵称
@@ -299,35 +296,18 @@ class InviteDB {
                     phone: `1${Math.floor(Math.random() * 9 + 1)}${Math.random().toString().slice(2, 10)}`,
                     timestamp: Date.now() - Math.floor(Math.random() * 3600 * 1000), // 随机1小时内
                     avatarColor: avatarColors[colorIndex],
-                    amount: invitePrice,
-                    isNew: true // 添加标志表示这是新增用户
+                    amount: invitePrice
                 };
                 
                 try {
-                    // 将添加用户的操作改为同步等待，获取返回的完整记录（包括ID）
+                    // 将新用户记录添加到数据库
                     const addedInvite = await this.addInvite(newInvite);
-                    // 将完整记录添加到新增记录数组
+                    // 将添加后的记录（包含ID）保存到新增记录数组
                     newInvites.push(addedInvite);
+                    console.log('已添加新邀请记录:', addedInvite.name);
                 } catch (error) {
                     console.error('添加邀请记录失败:', error);
                 }
-            }
-            
-            // 添加一个强制刷新的步骤，确保所有事务都已提交
-            await new Promise(resolve => {
-                const transaction = this.db.transaction(['invites'], 'readonly');
-                transaction.oncomplete = () => resolve();
-                const store = transaction.objectStore('invites');
-                store.count();
-            });
-            
-            // 保存新增用户ID到localStorage，用于突出显示
-            try {
-                // 提取新增用户的ID
-                const newInviteIds = newInvites.map(invite => invite.id);
-                localStorage.setItem('newInviteIds', JSON.stringify(newInviteIds));
-            } catch (error) {
-                console.error('保存新增用户ID失败:', error);
             }
         }
         
