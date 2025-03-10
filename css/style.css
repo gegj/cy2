@@ -160,7 +160,6 @@ nav.bg-white {
     padding-left: 10px;
     margin-left: -10px;
     box-shadow: 0 2px 8px rgba(38, 73, 243, 0.1);
-    animation: highlight-pulse 2s infinite;
 }
 
 /* 新增标签样式 */
@@ -168,12 +167,13 @@ nav.bg-white {
     position: absolute;
     top: 8px;
     right: 8px;
-    background-color: var(--primary-color);
+    background-color: #f44336;
     color: white;
-    font-size: 10px;
-    padding: 2px 6px;
+    font-size: 12px;
+    padding: 1px 6px;
     border-radius: 10px;
     font-weight: bold;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 /* 新增用户闪烁动画 */
