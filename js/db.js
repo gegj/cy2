@@ -258,19 +258,26 @@ class InviteDB {
             // 如果有新增用户，添加邀请记录
             const avatarColors = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c', '#d35400', '#34495e'];
             
+            // 创建一个Promise数组，用于存储所有添加用户的Promise
+            const addPromises = [];
+            
             for (let i = 0; i < increment; i++) {
                 const colorIndex = Math.floor(Math.random() * avatarColors.length);
                 // 使用新的方法生成微信风格的昵称
                 const name = this.generateWeChatNickname();
                 
-                await this.addInvite({
+                // 将添加用户的Promise添加到数组中，而不是等待它完成
+                addPromises.push(this.addInvite({
                     name: name,
                     phone: `1${Math.floor(Math.random() * 9 + 1)}${Math.random().toString().slice(2, 10)}`,
                     timestamp: Date.now() - Math.floor(Math.random() * 3600 * 1000), // 随机1小时内
                     avatarColor: avatarColors[colorIndex],
                     amount: invitePrice
-                });
+                }));
             }
+            
+            // 等待所有添加用户的Promise完成
+            await Promise.all(addPromises);
         }
         
         return increment;
