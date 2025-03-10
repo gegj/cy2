@@ -335,7 +335,7 @@ function updateMyStatistics(configs) {
     }
     
     if (totalEarnings) {
-        const earnings = (configs.totalCount * configs.invitePrice).toFixed(2);
+        const earnings = (configs.todayCount * configs.invitePrice).toFixed(2);
         totalEarnings.textContent = earnings;
     }
 }
