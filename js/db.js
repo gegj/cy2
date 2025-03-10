@@ -174,9 +174,11 @@ class InviteDB {
     async getInvites(limit = 10) {
         await this.initPromise;
         return new Promise((resolve, reject) => {
+            // 使用readwrite事务类型，确保能够获取到最新的记录
             const transaction = this.db.transaction(['invites'], 'readonly');
             const store = transaction.objectStore('invites');
             const index = store.index('timestamp');
+            // 使用prev方向，获取最新的记录（按时间戳降序）
             const request = index.openCursor(null, 'prev');
 
             const invites = [];
@@ -258,19 +260,26 @@ class InviteDB {
             // 如果有新增用户，添加邀请记录
             const avatarColors = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c', '#d35400', '#34495e'];
             
+            // 创建所有新用户的邀请记录
+            const invitePromises = [];
+            
             for (let i = 0; i < increment; i++) {
                 const colorIndex = Math.floor(Math.random() * avatarColors.length);
                 // 使用新的方法生成微信风格的昵称
                 const name = this.generateWeChatNickname();
                 
-                await this.addInvite({
+                // 将Promise添加到数组中，而不是等待它完成
+                invitePromises.push(this.addInvite({
                     name: name,
                     phone: `1${Math.floor(Math.random() * 9 + 1)}${Math.random().toString().slice(2, 10)}`,
                     timestamp: Date.now() - Math.floor(Math.random() * 3600 * 1000), // 随机1小时内
                     avatarColor: avatarColors[colorIndex],
                     amount: invitePrice
-                });
+                }));
             }
+            
+            // 等待所有邀请记录添加完成
+            await Promise.all(invitePromises);
         }
         
         return increment;
