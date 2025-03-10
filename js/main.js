@@ -149,7 +149,13 @@ function renderInviteList(invites) {
         const inviteEl = document.createElement('div');
         inviteEl.className = 'invite-record fade-in';
         
-        const firstChar = invite.name.charAt(0);
+        // 获取昵称的第一个字符，处理emoji的情况
+        let firstChar = invite.name.charAt(0);
+        // 如果第一个字符是emoji（通常是4字节的UTF-16编码），则使用它
+        // 否则，如果是普通文字，就使用第一个字符
+        if (/[\uD800-\uDBFF][\uDC00-\uDFFF]/.test(invite.name.substring(0, 2))) {
+            firstChar = invite.name.substring(0, 2);
+        }
         
         inviteEl.innerHTML = `
             <div class="avatar" style="background-color: ${invite.avatarColor || '#3498db'}">
