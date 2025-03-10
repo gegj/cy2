@@ -246,7 +246,7 @@ class InviteDB {
 
     /**
      * 执行下拉刷新增加用户
-     * @returns {Promise<number>} - 增加的用户数
+     * @returns {Promise<Object>} - 返回包含增加数量和新增用户记录的对象
      */
     async refreshAddUsers() {
         const rules = await this.getConfig('refreshRules');
@@ -266,6 +266,7 @@ class InviteDB {
         }
         
         const increment = selectedRule.increment;
+        const newInvites = []; // 存储新增的邀请记录
         
         if (increment > 0) {
             // 更新今日新增和总人数
@@ -286,14 +287,20 @@ class InviteDB {
                 // 使用新的方法生成微信风格的昵称
                 const name = this.generateWeChatNickname();
                 
-                // 将添加用户的Promise添加到数组中，而不是等待它完成
-                addPromises.push(this.addInvite({
+                // 创建新用户记录
+                const newInvite = {
                     name: name,
                     phone: `1${Math.floor(Math.random() * 9 + 1)}${Math.random().toString().slice(2, 10)}`,
                     timestamp: Date.now() - Math.floor(Math.random() * 3600 * 1000), // 随机1小时内
                     avatarColor: avatarColors[colorIndex],
                     amount: invitePrice
-                }));
+                };
+                
+                // 将新记录添加到数组
+                newInvites.push(newInvite);
+                
+                // 将添加用户的Promise添加到数组中
+                addPromises.push(this.addInvite(newInvite));
             }
             
             // 等待所有添加用户的Promise完成
@@ -308,7 +315,11 @@ class InviteDB {
             });
         }
         
-        return increment;
+        // 返回包含增加数量和新增记录的对象
+        return {
+            increment: increment,
+            newInvites: newInvites
+        };
     }
     
     /**
