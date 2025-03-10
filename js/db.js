@@ -210,7 +210,7 @@ class InviteDB {
     /**
      * 添加邀请记录
      * @param {Object} invite - 邀请记录
-     * @returns {Promise<number>} - 新记录的ID
+     * @returns {Promise<Object>} - 返回添加的记录，包括ID
      */
     async addInvite(invite) {
         await this.initPromise;
@@ -228,13 +228,19 @@ class InviteDB {
             };
             
             const store = transaction.objectStore('invites');
-            const request = store.add({
+            const inviteObj = {
                 ...invite,
                 timestamp: invite.timestamp || Date.now()
-            });
+            };
+            
+            const request = store.add(inviteObj);
 
-            request.onsuccess = () => {
-                resolve(request.result);
+            request.onsuccess = (event) => {
+                // 返回完整的记录，包括生成的ID
+                resolve({
+                    id: event.target.result,
+                    ...inviteObj
+                });
             };
 
             request.onerror = (event) => {
@@ -284,36 +290,52 @@ class InviteDB {
             
             for (let i = 0; i < increment; i++) {
                 const colorIndex = Math.floor(Math.random() * avatarColors.length);
+                // 使用新的方法生成微信风格的昵称
                 const name = this.generateWeChatNickname();
                 
-                // 创建新的邀请记录对象
+                // 创建新用户记录
                 const newInvite = {
                     name: name,
                     phone: `1${Math.floor(Math.random() * 9 + 1)}${Math.random().toString().slice(2, 10)}`,
                     timestamp: Date.now() - Math.floor(Math.random() * 3600 * 1000), // 随机1小时内
                     avatarColor: avatarColors[colorIndex],
-                    amount: invitePrice
+                    amount: invitePrice,
+                    isNew: true // 添加标志表示这是新增用户
                 };
                 
-                // 将添加用户的Promise添加到数组中
-                const addPromise = this.addInvite(newInvite)
-                    .then(id => {
-                        // 将ID添加到邀请记录中
-                        newInvite.id = id;
-                        // 将新邀请记录添加到数组中
-                        newInvites.push(newInvite);
-                        return id;
-                    });
-                
-                addPromises.push(addPromise);
+                try {
+                    // 将添加用户的操作改为同步等待，获取返回的完整记录（包括ID）
+                    const addedInvite = await this.addInvite(newInvite);
+                    // 将完整记录添加到新增记录数组
+                    newInvites.push(addedInvite);
+                } catch (error) {
+                    console.error('添加邀请记录失败:', error);
+                }
             }
             
-            // 等待所有添加用户的Promise完成
-            await Promise.all(addPromises);
+            // 添加一个强制刷新的步骤，确保所有事务都已提交
+            await new Promise(resolve => {
+                const transaction = this.db.transaction(['invites'], 'readonly');
+                transaction.oncomplete = () => resolve();
+                const store = transaction.objectStore('invites');
+                store.count();
+            });
+            
+            // 保存新增用户ID到localStorage，用于突出显示
+            try {
+                // 提取新增用户的ID
+                const newInviteIds = newInvites.map(invite => invite.id);
+                localStorage.setItem('newInviteIds', JSON.stringify(newInviteIds));
+            } catch (error) {
+                console.error('保存新增用户ID失败:', error);
+            }
         }
         
-        // 返回增加的数量和新增的邀请记录
-        return { increment, newInvites };
+        // 返回包含增加数量和新增记录的对象
+        return {
+            increment: increment,
+            newInvites: newInvites
+        };
     }
     
     /**
