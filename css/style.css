@@ -145,10 +145,48 @@ nav.bg-white {
     border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
+    position: relative;
 }
 
 .invite-record:last-child {
     border-bottom: none;
+}
+
+/* 新增用户高亮样式 */
+.new-invite-highlight {
+    background-color: rgba(38, 73, 243, 0.05);
+    border-left: 3px solid var(--primary-color);
+    border-radius: 4px;
+    padding-left: 10px;
+    margin-left: -10px;
+    box-shadow: 0 2px 8px rgba(38, 73, 243, 0.1);
+    animation: highlight-pulse 2s infinite;
+}
+
+/* 新增标签样式 */
+.new-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background-color: var(--primary-color);
+    color: white;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-weight: bold;
+}
+
+/* 新增用户闪烁动画 */
+@keyframes highlight-pulse {
+    0% {
+        box-shadow: 0 2px 8px rgba(38, 73, 243, 0.1);
+    }
+    50% {
+        box-shadow: 0 2px 12px rgba(38, 73, 243, 0.25);
+    }
+    100% {
+        box-shadow: 0 2px 8px rgba(38, 73, 243, 0.1);
+    }
 }
 
 .avatar {
@@ -257,44 +295,4 @@ nav.bg-white {
         max-width: 540px;
         margin: 0 auto;
     }
-}
-
-/* 新增邀请记录的闪光动画 */
-@keyframes highlightPulse {
-    0% { 
-        background-color: rgba(38, 73, 243, 0.2);
-        transform: scale(1);
-    }
-    50% { 
-        background-color: rgba(38, 73, 243, 0.1);
-        transform: scale(1.02);
-    }
-    100% { 
-        background-color: transparent;
-        transform: scale(1);
-    }
-}
-
-/* 新增邀请记录的高亮样式 */
-.new-invite-highlight {
-    animation: fadeIn 0.5s ease-out, highlightPulse 2s ease-in-out;
-    position: relative;
-    border-radius: 8px;
-}
-
-.new-invite-highlight::before {
-    content: "新";
-    position: absolute;
-    right: -5px;
-    top: -5px;
-    background-color: #ff5252;
-    color: white;
-    font-size: 10px;
-    font-weight: bold;
-    width: 18px;
-    height: 18px;
-    line-height: 18px;
-    text-align: center;
-    border-radius: 50%;
-    animation: fadeIn 0.5s ease-out;
 } 
