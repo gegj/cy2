@@ -37,7 +37,7 @@ class InviteDB {
                     
                     // 初始化默认配置
                     const defaultConfigs = [
-                        { key: 'invitePrice', value: 5 },                     // 邀请单价
+                        { key: 'invitePrice', value: 1.2 },                     // 邀请单价
                         { key: 'todayCount', value: 3 },                      // 今日新增
                         { key: 'totalCount', value: 8653 },                   // 总邀请人数
                         { key: 'inviteCode', value: '6985' },                 // 邀请码
