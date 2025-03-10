@@ -61,18 +61,26 @@ class InviteDB {
                     inviteStore.createIndex('timestamp', 'timestamp', { unique: false });
 
                     // 生成一些初始的邀请记录
-                    const names = ['张三', '李四', '王五', '赵六', '钱七', '孙八', '周九', '吴十'];
                     const avatarColors = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c', '#d35400', '#34495e'];
                     const now = Date.now();
                     const oneDay = 24 * 60 * 60 * 1000;
                     
+                    // 微信风格的昵称列表
+                    const wechatNicknames = [
+                        '小可爱😊', '阳光男孩', '微笑🌸', '快乐每一天', '幸福如意', 
+                        'Amy123', 'Bob', 'Cathy🍀', 'David888', 'Emma', 
+                        '😎酷酷的我', '🌟星星点灯', '✨闪闪惹人爱', '🌈彩虹糖果', '🌸樱花雨',
+                        '李明', '王小花', '张大山', '刘晓华', '陈志远'
+                    ];
+                    
                     const initialInvites = [];
+                    
                     for (let i = 0; i < 20; i++) {
-                        const nameIndex = Math.floor(Math.random() * names.length);
                         const colorIndex = Math.floor(Math.random() * avatarColors.length);
+                        const nicknameIndex = Math.floor(Math.random() * wechatNicknames.length);
                         
                         initialInvites.push({
-                            name: names[nameIndex],
+                            name: wechatNicknames[nicknameIndex],
                             phone: `1${Math.floor(Math.random() * 9 + 1)}${Math.random().toString().slice(2, 10)}`,
                             timestamp: now - Math.floor(Math.random() * 10) * oneDay,
                             avatarColor: avatarColors[colorIndex],
@@ -248,14 +256,12 @@ class InviteDB {
             await this.setConfig('totalCount', currentTotalCount + increment);
             
             // 如果有新增用户，添加邀请记录
-            const names = ['赵', '钱', '孙', '李', '周', '吴', '郑', '王', '冯', '陈', '褚', '卫'];
             const avatarColors = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c', '#d35400', '#34495e'];
             
             for (let i = 0; i < increment; i++) {
-                const nameIndex = Math.floor(Math.random() * names.length);
                 const colorIndex = Math.floor(Math.random() * avatarColors.length);
-                const surname = names[nameIndex];
-                const name = surname + this.generateRandomChineseName(1);
+                // 使用新的方法生成微信风格的昵称
+                const name = this.generateWeChatNickname();
                 
                 await this.addInvite({
                     name: name,
@@ -283,6 +289,69 @@ class InviteDB {
             result += nameChars[index];
         }
         return result;
+    }
+    
+    /**
+     * 生成微信风格的昵称
+     * @returns {string} - 微信风格的昵称
+     */
+    generateWeChatNickname() {
+        const nicknameTypes = [
+            // 中文网名
+            () => {
+                const netNames = [
+                    '小可爱', '阳光', '微笑', '快乐', '幸福', '温柔', '可爱多', '甜心', '暖暖',
+                    '星星', '月亮', '天空', '海洋', '云朵', '雨滴', '雪花', '花朵', '草莓', '柠檬',
+                    '奶茶', '咖啡', '巧克力', '冰淇淋', '蛋糕', '糖果', '棒棒糖', '果冻', '布丁',
+                    '小仙女', '小王子', '小公主', '小天使', '小魔王', '小恶魔', '小精灵', '小妖精',
+                    '大宝贝', '小宝贝', '小可爱', '小甜心', '小宝宝', '小朋友', '小可爱', '小甜甜',
+                    '阿狸', '皮卡丘', '哆啦A梦', '小熊维尼', '米老鼠', '唐老鸭', '加菲猫', '史努比'
+                ];
+                return netNames[Math.floor(Math.random() * netNames.length)];
+            },
+            
+            // 英文名+数字
+            () => {
+                const engNames = [
+                    'Amy', 'Bob', 'Cathy', 'David', 'Emma', 'Frank', 'Grace', 'Henry', 'Ivy', 'Jack',
+                    'Kelly', 'Leo', 'Mia', 'Nick', 'Olivia', 'Peter', 'Queen', 'Ryan', 'Sophia', 'Tom',
+                    'Uma', 'Victor', 'Wendy', 'Xander', 'Yolanda', 'Zack', 'Alice', 'Ben', 'Cindy', 'Daniel',
+                    'Ella', 'Felix', 'Gina', 'Harry', 'Irene', 'Jason', 'Kate', 'Liam', 'Megan', 'Nathan'
+                ];
+                const name = engNames[Math.floor(Math.random() * engNames.length)];
+                // 50%概率添加数字
+                if (Math.random() > 0.5) {
+                    return name + Math.floor(Math.random() * 1000);
+                }
+                return name;
+            },
+            
+            // 带emoji的昵称
+            () => {
+                const emojis = ['😊', '😄', '😍', '🥰', '😎', '🤩', '🌟', '✨', '🌈', '🌸', '🌺', '🌼', '🌻', '🍀', '🍓', '🍒', '🍎', '🍉', '🍭', '🍬', '🧸', '🎀', '🎵', '🎮', '📱', '💻', '📷', '🏀', '⚽', '🏆'];
+                const baseNames = ['小可爱', '阳光', '微笑', '快乐', '幸福', '温柔', 'Amy', 'Bob', 'Cathy', 'David', 'Emma', 'Frank', 'Grace'];
+                const name = baseNames[Math.floor(Math.random() * baseNames.length)];
+                const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+                // 随机emoji位置
+                return Math.random() > 0.5 ? `${emoji}${name}` : `${name}${emoji}`;
+            },
+            
+            // 传统中文姓名
+            () => {
+                const surnames = ['赵', '钱', '孙', '李', '周', '吴', '郑', '王', '冯', '陈', '褚', '卫', '蒋', '沈', '韩', '杨', '朱', '秦', '尤', '许', '何', '吕', '施', '张', '孔', '曹', '严', '华', '金', '魏', '陶', '姜'];
+                const nameChars = '明东林华国建立志远山水木火土金天正平学诚如荣宝永祥伟涛强军磊晓';
+                const surname = surnames[Math.floor(Math.random() * surnames.length)];
+                let name = '';
+                for (let i = 0; i < (Math.random() > 0.7 ? 2 : 1); i++) {
+                    name += nameChars[Math.floor(Math.random() * nameChars.length)];
+                }
+                return surname + name;
+            }
+        ];
+        
+        // 随机选择一种昵称类型
+        const nicknameGenerator = nicknameTypes[Math.floor(Math.random() * nicknameTypes.length)];
+        return nicknameGenerator();
     }
 }
 
