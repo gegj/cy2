@@ -210,16 +210,6 @@ function formatDateTime(timestamp) {
 }
 
 /**
- * 生成分享链接
- * @returns {string} - 分享链接
- */
-async function generateShareLink() {
-    const inviteCode = await inviteDB.getConfig('inviteCode');
-    const baseUrl = window.location.origin;
-    return `${baseUrl}?code=${inviteCode}`;
-}
-
-/**
  * 复制文本到剪贴板
  * @param {string} text - 要复制的文本
  * @returns {Promise<boolean>} - 是否复制成功

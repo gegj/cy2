@@ -66,12 +66,6 @@ async function initInvitePage() {
             inviteCodeElement.textContent = configs.inviteCode;
         }
         
-        const shareLinkElement = document.getElementById('share-link');
-        if (shareLinkElement) {
-            const shareLink = await generateShareLink();
-            shareLinkElement.value = shareLink;
-        }
-        
         updateInviteStatistics(configs);
         updateInviteList();
         
@@ -91,20 +85,6 @@ function addInviteEventListeners() {
                 showToast('邀请码已复制到剪贴板');
             } catch (error) {
                 console.error('复制邀请码失败:', error);
-                showToast('复制失败，请手动复制');
-            }
-        });
-    }
-    
-    const copyLinkBtn = document.getElementById('copy-link-btn');
-    if (copyLinkBtn) {
-        copyLinkBtn.addEventListener('click', async function() {
-            const shareLink = document.getElementById('share-link').value;
-            try {
-                await copyToClipboard(shareLink);
-                showToast('分享链接已复制到剪贴板');
-            } catch (error) {
-                console.error('复制分享链接失败:', error);
                 showToast('复制失败，请手动复制');
             }
         });
