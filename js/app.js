@@ -85,16 +85,19 @@ async function performRefresh() {
         // 执行数据库刷新操作，增加新用户
         const increment = await inviteDB.refreshAddUsers();
         
-        // 获取最新数据并更新页面
-        await updatePageData();
+        // 添加一个短暂的延迟，确保数据库事务完成
+        await new Promise(resolve => setTimeout(resolve, 300));
         
-        // 如果在邀请页面，确保更新邀请列表
+        // 如果在邀请页面，首先确保更新邀请列表
         if (window.location.pathname.includes('invite.html')) {
             // 使用全局的window.updateInviteList函数
             if (typeof window.updateInviteList === 'function') {
                 await window.updateInviteList();
             }
         }
+        
+        // 获取最新数据并更新页面
+        await updatePageData();
         
         // 显示刷新结果
         if (increment > 0) {
