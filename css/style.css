@@ -257,4 +257,44 @@ nav.bg-white {
         max-width: 540px;
         margin: 0 auto;
     }
+}
+
+/* 新增邀请记录的闪光动画 */
+@keyframes highlightPulse {
+    0% { 
+        background-color: rgba(38, 73, 243, 0.2);
+        transform: scale(1);
+    }
+    50% { 
+        background-color: rgba(38, 73, 243, 0.1);
+        transform: scale(1.02);
+    }
+    100% { 
+        background-color: transparent;
+        transform: scale(1);
+    }
+}
+
+/* 新增邀请记录的高亮样式 */
+.new-invite-highlight {
+    animation: fadeIn 0.5s ease-out, highlightPulse 2s ease-in-out;
+    position: relative;
+    border-radius: 8px;
+}
+
+.new-invite-highlight::before {
+    content: "新";
+    position: absolute;
+    right: -5px;
+    top: -5px;
+    background-color: #ff5252;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+    border-radius: 50%;
+    animation: fadeIn 0.5s ease-out;
 } 
