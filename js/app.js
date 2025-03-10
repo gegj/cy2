@@ -93,21 +93,37 @@ function initPullToRefresh() {
 async function performRefresh() {
     try {
         // 执行数据库刷新操作，增加新用户
-        const increment = await inviteDB.refreshAddUsers();
+        const result = await inviteDB.refreshAddUsers();
+        const { increment, newInvites } = result;
         
         // 添加一个短暂的延迟，确保数据库事务完成
         await new Promise(resolve => setTimeout(resolve, 300));
         
-        // 如果在邀请页面，首先确保更新邀请列表
-        if (window.location.pathname.includes('invite.html')) {
-            // 使用全局的window.updateInviteList函数
-            if (typeof window.updateInviteList === 'function') {
-                await window.updateInviteList();
+        // 如果在邀请页面并且有新增用户，直接使用返回的新增记录更新列表
+        if (window.location.pathname.includes('invite.html') && newInvites && newInvites.length > 0) {
+            console.log('直接使用新增邀请记录更新列表', newInvites);
+            try {
+                // 获取当前显示的邀请记录
+                const displayCount = await inviteDB.getConfig('inviteDisplayCount');
+                // 获取当前的邀请记录
+                const currentInvites = await inviteDB.getInvites(displayCount);
+                
+                // 合并新增记录和当前记录，并按时间戳降序排序
+                const allInvites = [...newInvites, ...currentInvites]
+                    .sort((a, b) => b.timestamp - a.timestamp)
+                    .slice(0, displayCount);
+                
+                // 渲染合并后的邀请列表
+                if (typeof window.renderInviteList === 'function') {
+                    window.renderInviteList(allInvites);
+                }
+            } catch (error) {
+                console.error('更新邀请列表失败:', error);
             }
         }
         
-        // 获取最新数据并更新页面
-        await updatePageData();
+        // 获取最新数据并更新页面，跳过更新邀请列表
+        await updatePageData(true);
         
         // 显示刷新结果
         if (increment > 0) {
@@ -123,8 +139,9 @@ async function performRefresh() {
 
 /**
  * 更新页面数据
+ * @param {boolean} skipInviteList - 是否跳过更新邀请列表
  */
-async function updatePageData() {
+async function updatePageData(skipInviteList = false) {
     // 获取配置数据
     const configs = await inviteDB.getAllConfig();
     
@@ -133,6 +150,7 @@ async function updatePageData() {
     const totalCount = document.getElementById('total-count');
     const todayEarnings = document.getElementById('today-earnings');
     const totalEarnings = document.getElementById('total-earnings');
+    const inviteTotalCount = document.getElementById('invite-total-count');
     
     if (todayCount) {
         todayCount.textContent = configs.todayCount;
@@ -140,6 +158,10 @@ async function updatePageData() {
     
     if (totalCount) {
         totalCount.textContent = configs.totalCount;
+    }
+    
+    if (inviteTotalCount) {
+        inviteTotalCount.textContent = configs.totalCount;
     }
     
     if (todayEarnings) {
@@ -150,8 +172,8 @@ async function updatePageData() {
         totalEarnings.textContent = '¥' + (configs.totalCount * configs.invitePrice).toFixed(2);
     }
     
-    // 如果在邀请页面，更新邀请列表
-    if (window.location.pathname.includes('invite.html')) {
+    // 如果在邀请页面且未设置跳过，更新邀请列表
+    if (window.location.pathname.includes('invite.html') && !skipInviteList) {
         // 使用window对象调用main.js中定义的updateInviteList函数
         if (typeof window.updateInviteList === 'function') {
             await window.updateInviteList();
