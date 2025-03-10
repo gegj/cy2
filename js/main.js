@@ -184,6 +184,51 @@ function renderInviteList(invites) {
     });
 }
 
+// 将renderInviteListWithHighlight函数添加到全局作用域
+window.renderInviteListWithHighlight = renderInviteListWithHighlight;
+
+function renderInviteListWithHighlight(invites, highlightIds) {
+    const container = document.getElementById('invite-list-container');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (invites.length === 0) {
+        container.innerHTML = '<div class="text-center py-5 text-gray-500">暂无邀请记录</div>';
+        return;
+    }
+    
+    invites.forEach(invite => {
+        const inviteEl = document.createElement('div');
+        // 判断是否为新增的邀请记录
+        const isNewInvite = highlightIds.includes(invite.id);
+        
+        // 为新增的邀请记录添加特殊的动画类
+        inviteEl.className = isNewInvite 
+            ? 'invite-record new-invite-highlight' 
+            : 'invite-record fade-in';
+        
+        // 获取昵称的第一个字符，处理emoji的情况
+        let firstChar = invite.name.charAt(0);
+        if (/[\uD800-\uDBFF][\uDC00-\uDFFF]/.test(invite.name.substring(0, 2))) {
+            firstChar = invite.name.substring(0, 2);
+        }
+        
+        inviteEl.innerHTML = `
+            <div class="avatar" style="background-color: ${invite.avatarColor || '#3498db'}">
+                ${firstChar}
+            </div>
+            <div class="invite-info">
+                <div class="invite-name">${invite.name}</div>
+                <div class="invite-time">${formatDateTime(invite.timestamp)}</div>
+            </div>
+            <div class="invite-amount">+¥${invite.amount.toFixed(2)}</div>
+        `;
+        
+        container.appendChild(inviteEl);
+    });
+}
+
 // 任务页面相关函数
 async function initTaskPage() {
     try {
