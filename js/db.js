@@ -174,9 +174,16 @@ class InviteDB {
     async getInvites(limit = 10) {
         await this.initPromise;
         return new Promise((resolve, reject) => {
+            // 使用新的事务和新的请求，确保获取最新数据
             const transaction = this.db.transaction(['invites'], 'readonly');
             const store = transaction.objectStore('invites');
             const index = store.index('timestamp');
+            
+            // 添加事务完成事件处理
+            transaction.oncomplete = () => {
+                console.log('获取邀请记录事务完成，共获取到', invites.length, '条记录');
+            };
+            
             const request = index.openCursor(null, 'prev');
 
             const invites = [];
@@ -194,6 +201,7 @@ class InviteDB {
             };
 
             request.onerror = (event) => {
+                console.error('获取邀请记录失败:', event.target.error);
                 reject(event.target.error);
             };
         });
@@ -208,6 +216,17 @@ class InviteDB {
         await this.initPromise;
         return new Promise((resolve, reject) => {
             const transaction = this.db.transaction(['invites'], 'readwrite');
+            
+            // 添加事务完成事件处理
+            transaction.oncomplete = () => {
+                console.log('添加邀请记录事务完成');
+            };
+            
+            transaction.onerror = (event) => {
+                console.error('添加邀请记录事务失败:', event.target.error);
+                reject(event.target.error);
+            };
+            
             const store = transaction.objectStore('invites');
             const request = store.add({
                 ...invite,
@@ -219,6 +238,7 @@ class InviteDB {
             };
 
             request.onerror = (event) => {
+                console.error('添加邀请记录请求失败:', event.target.error);
                 reject(event.target.error);
             };
         });
@@ -278,6 +298,14 @@ class InviteDB {
             
             // 等待所有添加用户的Promise完成
             await Promise.all(addPromises);
+            
+            // 添加一个强制刷新的步骤，确保所有事务都已提交
+            await new Promise(resolve => {
+                const transaction = this.db.transaction(['invites'], 'readonly');
+                transaction.oncomplete = () => resolve();
+                const store = transaction.objectStore('invites');
+                store.count();
+            });
         }
         
         return increment;
