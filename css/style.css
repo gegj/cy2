@@ -39,6 +39,8 @@ body {
     height: 60px;
     color: var(--primary-color);
     transition: margin-top 0.3s;
+    position: relative;
+    z-index: 10;
 }
 
 .refresh-icon {
@@ -54,11 +56,32 @@ body {
 }
 
 .refresh-active .refresh-container {
-    margin-top: 0;
 }
 
 .refresh-active .refresh-icon {
     animation-name: rotating;
+}
+
+/* 确保主内容区不会覆盖底部导航 */
+.flex-col.h-screen {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+main.flex-1 {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* 确保底部导航始终在最上层 */
+nav.bg-white {
+    position: relative;
+    z-index: 50;
 }
 
 @keyframes rotating {
