@@ -92,26 +92,46 @@ function initPullToRefresh() {
  */
 async function performRefresh() {
     try {
-        // 执行数据库刷新操作，增加新用户，并获取新增的邀请记录
-        const { increment, newInvites } = await inviteDB.refreshAddUsers();
+        // 执行数据库刷新操作，增加新用户
+        const result = await inviteDB.refreshAddUsers();
+        const { increment, newInvites } = result;
         
-        // 获取最新数据并更新页面（统计数据）
-        await updatePageData();
+        // 添加一个短暂的延迟，确保数据库事务完成
+        await new Promise(resolve => setTimeout(resolve, 300));
         
-        // 如果在邀请页面且有新增用户，立即显示新增用户
-        if (window.location.pathname.includes('invite.html') && newInvites.length > 0) {
-            // 获取当前显示的邀请记录
+        // 如果在邀请页面
+        if (window.location.pathname.includes('invite.html')) {
+            // 获取显示数量
             const displayCount = await inviteDB.getConfig('inviteDisplayCount');
-            const currentInvites = await inviteDB.getInvites(displayCount - newInvites.length);
             
-            // 将新增的邀请记录添加到当前邀请记录的前面
-            const combinedInvites = [...newInvites, ...currentInvites].slice(0, displayCount);
-            
-            // 渲染邀请列表，并标记新增的邀请记录
-            if (typeof window.renderInviteListWithHighlight === 'function') {
-                window.renderInviteListWithHighlight(combinedInvites, newInvites.map(invite => invite.id));
+            if (newInvites && newInvites.length > 0) {
+                // 获取当前显示的邀请记录（不包括新增的）
+                const currentInvites = await inviteDB.getInvites(displayCount + newInvites.length);
+                
+                // 去除可能重复的记录
+                const existingIds = new Set(newInvites.map(invite => invite.id));
+                const filteredCurrentInvites = currentInvites.filter(invite => !existingIds.has(invite.id));
+                
+                // 合并新增记录和当前记录，并按时间戳降序排序
+                const allInvites = [...newInvites, ...filteredCurrentInvites]
+                    .sort((a, b) => b.timestamp - a.timestamp)
+                    .slice(0, displayCount);
+                
+                // 渲染邀请列表
+                if (typeof window.renderInviteList === 'function') {
+                    window.renderInviteList(allInvites);
+                    console.log('已渲染包含新增用户的邀请列表:', allInvites);
+                }
+            } else {
+                // 如果没有新增用户，正常更新列表
+                if (typeof window.updateInviteList === 'function') {
+                    await window.updateInviteList();
+                }
             }
         }
+        
+        // 获取最新数据并更新页面，跳过更新邀请列表
+        await updatePageData(true);
         
         // 显示刷新结果
         if (increment > 0) {
