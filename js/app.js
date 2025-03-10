@@ -44,9 +44,13 @@ function initPullToRefresh() {
             e.preventDefault();
             mainContent.classList.add('refresh-active');
             
-            // 设置下拉高度，有阻尼效果
-            const pullHeight = Math.min(deltaY * 0.5, 80);
-            mainContent.style.transform = `translateY(${pullHeight}px)`;
+            // 设置下拉高度，有阻尼效果，限制最大高度防止覆盖底部导航
+            const pullHeight = Math.min(deltaY * 0.4, 60);
+            // 只移动刷新指示器，不移动整个内容区域
+            const refreshContainer = mainContent.querySelector('.refresh-container');
+            if (refreshContainer) {
+                refreshContainer.style.marginTop = `${pullHeight}px`;
+            }
         }
     });
     
@@ -54,6 +58,8 @@ function initPullToRefresh() {
     mainContent.addEventListener('touchend', function() {
         if (!pulling) return;
         pulling = false;
+        
+        const refreshContainer = mainContent.querySelector('.refresh-container');
         
         // 如果下拉足够，执行刷新
         if (currentY - startY > 50 && !refreshing) {
@@ -63,14 +69,18 @@ function initPullToRefresh() {
             performRefresh().then(() => {
                 // 刷新完成后恢复状态
                 setTimeout(() => {
-                    mainContent.style.transform = '';
+                    if (refreshContainer) {
+                        refreshContainer.style.marginTop = '';
+                    }
                     mainContent.classList.remove('refresh-active');
                     refreshing = false;
                 }, 1000);
             });
         } else {
             // 如果下拉不足，恢复状态
-            mainContent.style.transform = '';
+            if (refreshContainer) {
+                refreshContainer.style.marginTop = '';
+            }
             mainContent.classList.remove('refresh-active');
         }
     });
