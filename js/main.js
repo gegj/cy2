@@ -126,19 +126,9 @@ window.updateInviteList = updateInviteList;
 
 async function updateInviteList() {
     try {
-        // 获取显示条数配置
         const displayCount = await inviteDB.getConfig('inviteDisplayCount');
-        // 获取最新的邀请记录
         const invites = await inviteDB.getInvites(displayCount);
-        // 渲染邀请记录列表
         renderInviteList(invites);
-        
-        // 更新邀请总数显示
-        const inviteTotalCount = document.getElementById('invite-total-count');
-        if (inviteTotalCount) {
-            const totalCount = await inviteDB.getConfig('totalCount');
-            inviteTotalCount.textContent = totalCount;
-        }
     } catch (error) {
         console.error('更新邀请列表失败:', error);
     }
