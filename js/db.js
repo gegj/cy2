@@ -284,10 +284,9 @@ class InviteDB {
             
             for (let i = 0; i < increment; i++) {
                 const colorIndex = Math.floor(Math.random() * avatarColors.length);
-                // 使用新的方法生成微信风格的昵称
                 const name = this.generateWeChatNickname();
                 
-                // 创建新用户记录
+                // 创建新的邀请记录对象
                 const newInvite = {
                     name: name,
                     phone: `1${Math.floor(Math.random() * 9 + 1)}${Math.random().toString().slice(2, 10)}`,
@@ -296,30 +295,25 @@ class InviteDB {
                     amount: invitePrice
                 };
                 
-                // 将新记录添加到数组
-                newInvites.push(newInvite);
-                
                 // 将添加用户的Promise添加到数组中
-                addPromises.push(this.addInvite(newInvite));
+                const addPromise = this.addInvite(newInvite)
+                    .then(id => {
+                        // 将ID添加到邀请记录中
+                        newInvite.id = id;
+                        // 将新邀请记录添加到数组中
+                        newInvites.push(newInvite);
+                        return id;
+                    });
+                
+                addPromises.push(addPromise);
             }
             
             // 等待所有添加用户的Promise完成
             await Promise.all(addPromises);
-            
-            // 添加一个强制刷新的步骤，确保所有事务都已提交
-            await new Promise(resolve => {
-                const transaction = this.db.transaction(['invites'], 'readonly');
-                transaction.oncomplete = () => resolve();
-                const store = transaction.objectStore('invites');
-                store.count();
-            });
         }
         
-        // 返回包含增加数量和新增记录的对象
-        return {
-            increment: increment,
-            newInvites: newInvites
-        };
+        // 返回增加的数量和新增的邀请记录
+        return { increment, newInvites };
     }
     
     /**
