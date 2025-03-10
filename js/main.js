@@ -121,6 +121,9 @@ function updateInviteStatistics(configs) {
     }
 }
 
+// 将updateInviteList函数添加到全局作用域
+window.updateInviteList = updateInviteList;
+
 async function updateInviteList() {
     try {
         const displayCount = await inviteDB.getConfig('inviteDisplayCount');

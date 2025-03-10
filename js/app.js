@@ -86,7 +86,12 @@ async function performRefresh() {
         const increment = await inviteDB.refreshAddUsers();
         
         // 获取最新数据并更新页面
-        updatePageData();
+        await updatePageData();
+        
+        // 如果在邀请页面，确保更新邀请列表
+        if (window.location.pathname.includes('invite.html') && typeof window.updateInviteList === 'function') {
+            await window.updateInviteList();
+        }
         
         // 显示刷新结果
         if (increment > 0) {
@@ -130,8 +135,11 @@ async function updatePageData() {
     }
     
     // 如果在邀请页面，更新邀请列表
-    if (window.location.pathname.includes('invite.html') && typeof updateInviteList === 'function') {
-        updateInviteList();
+    if (window.location.pathname.includes('invite.html')) {
+        // 使用window对象调用main.js中定义的updateInviteList函数
+        if (typeof window.updateInviteList === 'function') {
+            window.updateInviteList();
+        }
     }
 }
 
