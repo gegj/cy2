@@ -126,9 +126,18 @@ window.updateInviteList = updateInviteList;
 
 async function updateInviteList() {
     try {
+        console.log('开始更新邀请列表...');
+        // 添加一个短暂的延迟，确保数据库事务完成
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         const displayCount = await inviteDB.getConfig('inviteDisplayCount');
+        console.log('需要显示的邀请记录数量:', displayCount);
+        
         const invites = await inviteDB.getInvites(displayCount);
+        console.log('获取到的邀请记录:', invites.length);
+        
         renderInviteList(invites);
+        console.log('邀请列表渲染完成');
     } catch (error) {
         console.error('更新邀请列表失败:', error);
     }
