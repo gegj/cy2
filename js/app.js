@@ -96,42 +96,25 @@ async function performRefresh() {
         const result = await inviteDB.refreshAddUsers();
         const { increment, newInvites } = result;
         
-        // 添加一个短暂的延迟，确保数据库事务完成
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        // 如果在邀请页面
-        if (window.location.pathname.includes('invite.html')) {
-            // 获取显示数量
-            const displayCount = await inviteDB.getConfig('inviteDisplayCount');
-            
-            if (newInvites && newInvites.length > 0) {
-                // 获取当前显示的邀请记录（不包括新增的）
-                const currentInvites = await inviteDB.getInvites(displayCount + newInvites.length);
+        // 如果有新用户，更新邀请记录缓存
+        if (newInvites && newInvites.length > 0) {
+            // 如果在邀请页面，添加新记录到缓存并立即渲染
+            if (window.location.pathname.includes('invite.html')) {
+                console.log('刷新添加了新用户，更新邀请记录缓存');
                 
-                // 去除可能重复的记录
-                const existingIds = new Set(newInvites.map(invite => invite.id));
-                const filteredCurrentInvites = currentInvites.filter(invite => !existingIds.has(invite.id));
+                // 将新增记录添加到缓存
+                inviteCache.addRecords(newInvites);
                 
-                // 合并新增记录和当前记录，并按时间戳降序排序
-                const allInvites = [...newInvites, ...filteredCurrentInvites]
-                    .sort((a, b) => b.timestamp - a.timestamp)
-                    .slice(0, displayCount);
+                // 获取显示数量
+                const displayCount = await inviteDB.getConfig('inviteDisplayCount') || 10;
                 
-                // 渲染邀请列表
-                if (typeof window.renderInviteList === 'function') {
-                    window.renderInviteList(allInvites);
-                    console.log('已渲染包含新增用户的邀请列表:', allInvites);
-                }
-            } else {
-                // 如果没有新增用户，正常更新列表
-                if (typeof window.updateInviteList === 'function') {
-                    await window.updateInviteList();
-                }
+                // 渲染最新的邀请记录
+                renderInviteList(inviteCache.getRecords(displayCount));
             }
         }
         
-        // 获取最新数据并更新页面，跳过更新邀请列表
-        await updatePageData(true);
+        // 更新页面其他数据（统计数据等）
+        await updatePageData(true); // 跳过邀请列表更新
         
         // 显示刷新结果
         if (increment > 0) {
