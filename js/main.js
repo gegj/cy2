@@ -20,6 +20,90 @@ document.addEventListener('DOMContentLoaded', function() {
     setActiveNavItem();
 });
 
+// 全局邀请记录缓存 - 存储最新的邀请记录
+const inviteCache = {
+    records: [], // 邀请记录数组
+    isInitialized: false, // 是否已初始化
+    clearNewMarksTimer: null, // 清除新标记的定时器
+    
+    // 初始化缓存
+    async initialize(count = 10) {
+        if (this.isInitialized) return this.records;
+        
+        try {
+            // 从数据库加载记录
+            const records = await inviteDB.getInvites(count);
+            this.records = records;
+            this.isInitialized = true;
+            console.log('邀请记录缓存已初始化:', this.records.length, '条记录');
+            return this.records;
+        } catch (error) {
+            console.error('初始化邀请记录缓存失败:', error);
+            return [];
+        }
+    },
+    
+    // 添加新记录
+    addRecords(newRecords) {
+        if (!Array.isArray(newRecords)) {
+            newRecords = [newRecords]; // 转换为数组
+        }
+        
+        // 添加isNew标记
+        newRecords.forEach(record => {
+            record.isNew = true;
+        });
+        
+        // 合并记录并按时间戳降序排序
+        this.records = [...newRecords, ...this.records]
+            .sort((a, b) => b.timestamp - a.timestamp);
+            
+        console.log('缓存已更新:', this.records.length, '条记录，新增', newRecords.length, '条');
+        
+        // 设置10秒后自动清除"新"标记
+        this.scheduleNewMarksClear();
+        
+        return this.records;
+    },
+    
+    // 获取指定数量的记录
+    getRecords(count = 10) {
+        return this.records.slice(0, count);
+    },
+    
+    // 清除所有"新"标记
+    clearNewFlags() {
+        this.records.forEach(record => {
+            record.isNew = false;
+        });
+        console.log('已清除所有新记录标记');
+    },
+    
+    // 安排自动清除"新"标记
+    scheduleNewMarksClear(delay = 10000) { // 默认10秒
+        // 清除现有定时器
+        if (this.clearNewMarksTimer) {
+            clearTimeout(this.clearNewMarksTimer);
+        }
+        
+        // 设置新的定时器
+        this.clearNewMarksTimer = setTimeout(() => {
+            this.clearNewFlags();
+            // 如果在邀请页面，更新显示
+            if (window.location.pathname.includes('invite.html')) {
+                const container = document.getElementById('invite-list-container');
+                if (container) {
+                    // 移除所有高亮效果
+                    document.querySelectorAll('.invite-record.new-invite-highlight').forEach(el => {
+                        el.classList.remove('new-invite-highlight');
+                        el.querySelector('.new-badge')?.remove();
+                    });
+                }
+            }
+        }, delay);
+    }
+};
+
 // 首页相关函数
 async function initIndexPage() {
     try {
@@ -59,15 +143,22 @@ function updateStatistics(configs) {
 // 邀请页面相关函数
 async function initInvitePage() {
     try {
+        // 获取配置数据
         const configs = await inviteDB.getAllConfig();
         
+        // 设置邀请码
         const inviteCodeElement = document.getElementById('invite-code');
         if (inviteCodeElement) {
             inviteCodeElement.textContent = configs.inviteCode;
         }
         
+        // 更新统计数据
         updateInviteStatistics(configs);
-        updateInviteList();
+        
+        // 初始化邀请记录缓存并渲染列表
+        const displayCount = configs.inviteDisplayCount || 10;
+        await inviteCache.initialize(displayCount);
+        renderInviteList(inviteCache.getRecords(displayCount));
         
     } catch (error) {
         console.error('初始化邀请页面失败:', error);
@@ -127,20 +218,21 @@ window.updateInviteList = updateInviteList;
 async function updateInviteList() {
     try {
         console.log('开始更新邀请列表...');
-        // 添加一个短暂的延迟，确保数据库事务完成
-        await new Promise(resolve => setTimeout(resolve, 100));
         
-        // 清除之前的新增用户标记
-        localStorage.removeItem('newInviteIds');
-        
-        const displayCount = await inviteDB.getConfig('inviteDisplayCount');
+        // 获取显示数量
+        const displayCount = await inviteDB.getConfig('inviteDisplayCount') || 10;
         console.log('需要显示的邀请记录数量:', displayCount);
         
-        const invites = await inviteDB.getInvites(displayCount);
-        console.log('获取到的邀请记录:', invites.length);
+        // 如果缓存未初始化，先初始化
+        if (!inviteCache.isInitialized) {
+            await inviteCache.initialize(displayCount);
+        }
         
-        renderInviteList(invites);
-        console.log('邀请列表渲染完成');
+        // 获取记录并渲染
+        const records = inviteCache.getRecords(displayCount);
+        renderInviteList(records);
+        
+        console.log('邀请列表更新完成，显示', records.length, '条记录');
     } catch (error) {
         console.error('更新邀请列表失败:', error);
     }
@@ -155,29 +247,16 @@ function renderInviteList(invites) {
     
     container.innerHTML = '';
     
-    if (invites.length === 0) {
+    if (!invites || invites.length === 0) {
         container.innerHTML = '<div class="text-center py-5 text-gray-500">暂无邀请记录</div>';
         return;
-    }
-    
-    // 尝试从localStorage获取新增用户ID
-    let newInviteIds = [];
-    try {
-        const storedIds = localStorage.getItem('newInviteIds');
-        if (storedIds) {
-            newInviteIds = JSON.parse(storedIds);
-        }
-    } catch (error) {
-        console.error('获取新增用户ID失败:', error);
     }
     
     invites.forEach(invite => {
         const inviteEl = document.createElement('div');
         
-        // 判断是否为新增用户，如果是则添加突出显示的样式
-        const isNewInvite = invite.isNew || (invite.id && newInviteIds.includes(invite.id));
-        
-        // 添加高亮样式或者普通样式
+        // 判断是否为新增用户，添加高亮样式
+        const isNewInvite = invite.isNew === true;
         inviteEl.className = isNewInvite 
             ? 'invite-record fade-in new-invite-highlight' 
             : 'invite-record fade-in';
@@ -185,7 +264,6 @@ function renderInviteList(invites) {
         // 获取昵称的第一个字符，处理emoji的情况
         let firstChar = invite.name.charAt(0);
         // 如果第一个字符是emoji（通常是4字节的UTF-16编码），则使用它
-        // 否则，如果是普通文字，就使用第一个字符
         if (/[\uD800-\uDBFF][\uDC00-\uDFFF]/.test(invite.name.substring(0, 2))) {
             firstChar = invite.name.substring(0, 2);
         }
