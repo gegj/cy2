@@ -76,7 +76,7 @@ class InviteDB {
                             phone: `1${Math.floor(Math.random() * 9 + 1)}${Math.random().toString().slice(2, 10)}`,
                             timestamp: now - Math.floor(Math.random() * 10) * oneDay,
                             avatarColor: avatarColors[colorIndex],
-                            amount: 5
+                            amount: 1.2
                         });
                     }
                     
