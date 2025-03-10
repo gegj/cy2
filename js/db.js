@@ -255,6 +255,7 @@ class InviteDB {
      * @returns {Promise<Object>} - 返回包含增加数量和新增用户记录的对象
      */
     async refreshAddUsers() {
+        // 获取下拉刷新规则和邀请单价
         const rules = await this.getConfig('refreshRules');
         const invitePrice = await this.getConfig('invitePrice');
         
@@ -282,27 +283,27 @@ class InviteDB {
             await this.setConfig('todayCount', currentTodayCount + increment);
             await this.setConfig('totalCount', currentTotalCount + increment);
             
-            // 如果有新增用户，添加邀请记录
+            // 添加新邀请记录
             const avatarColors = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12', '#9b59b6', '#1abc9c', '#d35400', '#34495e'];
             
+            // 创建并添加新用户记录
             for (let i = 0; i < increment; i++) {
                 const colorIndex = Math.floor(Math.random() * avatarColors.length);
-                // 使用新的方法生成微信风格的昵称
+                // 使用微信风格的昵称
                 const name = this.generateWeChatNickname();
                 
-                // 创建新用户记录
+                // 创建新用户记录 - 确保时间戳是最新的
                 const newInvite = {
                     name: name,
                     phone: `1${Math.floor(Math.random() * 9 + 1)}${Math.random().toString().slice(2, 10)}`,
-                    timestamp: Date.now() - Math.floor(Math.random() * 3600 * 1000), // 随机1小时内
+                    timestamp: Date.now() - Math.floor(Math.random() * 60 * 1000), // 最近1分钟内
                     avatarColor: avatarColors[colorIndex],
                     amount: invitePrice
                 };
                 
                 try {
-                    // 将新用户记录添加到数据库
+                    // 添加到数据库并获取完整记录（包含ID）
                     const addedInvite = await this.addInvite(newInvite);
-                    // 将添加后的记录（包含ID）保存到新增记录数组
                     newInvites.push(addedInvite);
                     console.log('已添加新邀请记录:', addedInvite.name);
                 } catch (error) {
@@ -311,7 +312,7 @@ class InviteDB {
             }
         }
         
-        // 返回包含增加数量和新增记录的对象
+        // 返回结果
         return {
             increment: increment,
             newInvites: newInvites
