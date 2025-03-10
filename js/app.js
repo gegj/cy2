@@ -89,8 +89,11 @@ async function performRefresh() {
         await updatePageData();
         
         // 如果在邀请页面，确保更新邀请列表
-        if (window.location.pathname.includes('invite.html') && typeof window.updateInviteList === 'function') {
-            await window.updateInviteList();
+        if (window.location.pathname.includes('invite.html')) {
+            // 使用全局的window.updateInviteList函数
+            if (typeof window.updateInviteList === 'function') {
+                await window.updateInviteList();
+            }
         }
         
         // 显示刷新结果
@@ -138,7 +141,7 @@ async function updatePageData() {
     if (window.location.pathname.includes('invite.html')) {
         // 使用window对象调用main.js中定义的updateInviteList函数
         if (typeof window.updateInviteList === 'function') {
-            window.updateInviteList();
+            await window.updateInviteList();
         }
     }
 }
