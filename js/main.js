@@ -134,6 +134,9 @@ async function updateInviteList() {
     }
 }
 
+// 将renderInviteList函数添加到全局作用域
+window.renderInviteList = renderInviteList;
+
 function renderInviteList(invites) {
     const container = document.getElementById('invite-list-container');
     if (!container) return;
