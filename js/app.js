@@ -96,25 +96,25 @@ async function performRefresh() {
         const result = await inviteDB.refreshAddUsers();
         const { increment, newInvites } = result;
         
-        // 如果有新用户，更新邀请记录缓存
-        if (newInvites && newInvites.length > 0) {
-            // 如果在邀请页面，添加新记录到缓存并立即渲染
-            if (window.location.pathname.includes('invite.html')) {
-                console.log('刷新添加了新用户，更新邀请记录缓存');
-                
-                // 将新增记录添加到缓存
-                inviteCache.addRecords(newInvites);
+        // 更新页面数据（统计数据等）
+        await updatePageData(true); // 跳过邀请列表更新
+        
+        // 如果在邀请页面，更新邀请记录列表
+        if (window.location.pathname.includes('invite.html')) {
+            if (newInvites && newInvites.length > 0) {
+                console.log('下拉刷新添加了新用户，更新邀请记录列表');
                 
                 // 获取显示数量
                 const displayCount = await inviteDB.getConfig('inviteDisplayCount') || 10;
                 
-                // 渲染最新的邀请记录
-                renderInviteList(inviteCache.getRecords(displayCount));
+                // 将新用户添加到缓存并渲染
+                inviteCache.addRecords(newInvites);
+                const updatedRecords = inviteCache.getRecords(displayCount);
+                
+                // 渲染更新后的邀请列表
+                renderInviteList(updatedRecords);
             }
         }
-        
-        // 更新页面其他数据（统计数据等）
-        await updatePageData(true); // 跳过邀请列表更新
         
         // 显示刷新结果
         if (increment > 0) {
