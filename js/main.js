@@ -329,6 +329,14 @@ function addAdminEventListeners() {
         const template = document.getElementById('rule-template');
         const ruleElement = document.importNode(template.content, true);
         
+        // 确保添加的规则输入框使用正确的属性
+        ruleElement.querySelector('.rule-increment').value = "0";
+        ruleElement.querySelector('.rule-increment').min = "0";
+        ruleElement.querySelector('.rule-probability').value = "0";
+        ruleElement.querySelector('.rule-probability').min = "0";
+        ruleElement.querySelector('.rule-probability').max = "100";
+        ruleElement.querySelector('.rule-probability').step = "0.1";
+        
         ruleElement.querySelector('.delete-rule').addEventListener('click', function() {
             this.closest('.rule-item').remove();
         });
@@ -391,6 +399,9 @@ async function saveSettings() {
             if (!isNaN(increment) && !isNaN(probability) && increment >= 0 && probability >= 0) {
                 rules.push({ increment, probability });
                 totalProbability += probability;
+                console.log(`添加规则: 增长人数=${increment}, 概率=${probability}%`);
+            } else {
+                console.warn(`忽略无效规则: 增长人数=${increment}, 概率=${probability}%`);
             }
         });
         
@@ -399,8 +410,12 @@ async function saveSettings() {
             return;
         }
         
-        if (Math.abs(totalProbability - 100) > 0.01) {
-            showToast('所有规则的概率之和必须为100%');
+        // 添加日志以便于调试
+        console.log('规则总概率:', totalProbability);
+        
+        // 放宽对总概率的要求，允许有0.5%的误差
+        if (Math.abs(totalProbability - 100) > 0.5) {
+            showToast(`所有规则的概率之和必须接近100%，当前总和为${totalProbability}%`);
             return;
         }
         
@@ -411,7 +426,10 @@ async function saveSettings() {
         await inviteDB.setConfig('inviteDisplayCount', inviteDisplayCount);
         await inviteDB.setConfig('refreshRules', rules);
         
-        showToast('设置保存成功');
+        console.log('保存的规则:', rules);
+        
+        // 显示更详细的成功信息
+        showToast(`设置保存成功！共保存了${rules.length}条规则，总概率: ${totalProbability.toFixed(1)}%`);
     } catch (error) {
         console.error('保存设置失败:', error);
         showToast('保存设置失败，请重试');
